@@ -8,13 +8,11 @@ import (
 	"github.com/Ricarse/goMovies/server/GoMoviesServer/database"
 	"github.com/Ricarse/goMovies/server/GoMoviesServer/models"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 var movieCollection *mongo.Collection = database.OpenCollection("movies")
-var validate = validator.New()
 
 func GetMovies() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -68,7 +66,7 @@ func AddMovie() gin.HandlerFunc {
 		}
 		result, err := movieCollection.InsertOne(ctx, movie)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"err": "insert fail"})
+			c.JSON(http.StatusInternalServerError, gin.H{"err": "insert fail"})
 			return
 		}
 		c.JSON(http.StatusCreated, result)
