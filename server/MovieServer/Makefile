@@ -5,4 +5,4 @@ run: build
 	@./bin/fs
 
 test:
-	@go test ./... -v
+	@GO_TEST=1 go test ./tests/ -v -count=1

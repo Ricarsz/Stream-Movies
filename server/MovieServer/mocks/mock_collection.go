@@ -11,6 +11,8 @@ type MockCollection struct {
 	FindFunc           func(ctx context.Context, filter interface{}) (*mongo.Cursor, error)
 	FindOneFunc        func(ctx context.Context, filter interface{}) (*mongo.SingleResult, error)
 	InsertOneFunc      func(ctx context.Context, document interface{}) (*mongo.InsertOneResult, error)
+	UpdateOneFunc      func(ctx context.Context, filter interface{}, update interface{}) (*mongo.UpdateResult, error)
+	DeleteOneFunc      func(ctx context.Context, filter interface{}) (*mongo.DeleteResult, error)
 	CountDocumentsFunc func(ctx context.Context, filter interface{}) (int64, error)
 }
 
@@ -33,6 +35,20 @@ func (m *MockCollection) FindOne(ctx context.Context, filter interface{}) (*mong
 func (m *MockCollection) InsertOne(ctx context.Context, document interface{}) (*mongo.InsertOneResult, error) {
 	if m.InsertOneFunc != nil {
 		return m.InsertOneFunc(ctx, document)
+	}
+	return nil, nil
+}
+
+func (m *MockCollection) UpdateOne(ctx context.Context, filter interface{}, update interface{}) (*mongo.UpdateResult, error) {
+	if m.UpdateOneFunc != nil {
+		return m.UpdateOneFunc(ctx, filter, update)
+	}
+	return nil, nil
+}
+
+func (m *MockCollection) DeleteOne(ctx context.Context, filter interface{}) (*mongo.DeleteResult, error) {
+	if m.DeleteOneFunc != nil {
+		return m.DeleteOneFunc(ctx, filter)
 	}
 	return nil, nil
 }

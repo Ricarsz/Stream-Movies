@@ -59,3 +59,25 @@ func (r *MovieRepository) Create(ctx context.Context, movie *models.Movie) (inte
 	}
 	return result.InsertedID, nil
 }
+
+func (r *MovieRepository) Update(ctx context.Context, imdbID string, movie *models.Movie) (int64, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	result, err := r.collection.UpdateOne(ctx, bson.M{"imdb_id": imdbID}, bson.M{"$set": movie})
+	if err != nil {
+		return 0, err
+	}
+	return result.ModifiedCount, nil
+}
+
+func (r *MovieRepository) Delete(ctx context.Context, imdbID string) (int64, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	result, err := r.collection.DeleteOne(ctx, bson.M{"imdb_id": imdbID})
+	if err != nil {
+		return 0, err
+	}
+	return result.DeletedCount, nil
+}
