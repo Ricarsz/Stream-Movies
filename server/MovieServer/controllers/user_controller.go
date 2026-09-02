@@ -1,26 +1,34 @@
 package controllers
 
 import (
-	"context"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/Ricarse/goMovies/server/GoMoviesServer/database"
 	"github.com/Ricarse/goMovies/server/GoMoviesServer/models"
+	"github.com/Ricarse/goMovies/server/GoMoviesServer/repository"
 	"github.com/Ricarse/goMovies/server/GoMoviesServer/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-var userCollection *mongo.Collection = database.OpenCollection("users")
+var userRepo *repository.UserRepository
 var validate = validator.New()
+
+func init() {
+	if os.Getenv("GO_TEST") == "" {
+		userRepo = repository.NewUserRepository(database.NewMongoCollection(database.OpenCollection("users")))
+	}
+}
+
+func SetUserRepository(repo *repository.UserRepository) {
+	userRepo = repo
+}
 
 func RegisterUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-		defer cancel()
 		var user models.User
 		if err := c.ShouldBindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"err": "User register fail"})
@@ -33,8 +41,9 @@ func RegisterUser() gin.HandlerFunc {
 		hashPassword, err := utils.HashPassword(user.Password)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"err": "hash fail"})
+			return
 		}
-		count, err := userCollection.CountDocuments(ctx, bson.M{"email": user.Email})
+		count, err := userRepo.CountByEmail(c.Request.Context(), user.Email)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"err": "fail query user email"})
 			return
@@ -47,11 +56,11 @@ func RegisterUser() gin.HandlerFunc {
 		user.CreateAt = time.Now()
 		user.UpdateAt = time.Now()
 		user.Password = hashPassword
-		result, err := userCollection.InsertOne(ctx, user)
+		insertedID, err := userRepo.Create(c.Request.Context(), &user)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"err": "insert fail"})
 			return
 		}
-		c.JSON(http.StatusCreated, result)
+		c.JSON(http.StatusCreated, gin.H{"inserted_id": insertedID})
 	}
 }
